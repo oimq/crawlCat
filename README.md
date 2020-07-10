@@ -15,6 +15,9 @@ for installing, requires are below :
 ***
 
 ### Installation
+
+before you start, please install the jSona by above url
+
 ```
 pip3 install crawlCat-master
 ```
