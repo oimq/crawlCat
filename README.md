@@ -10,6 +10,8 @@ for installing, requires are below :
 
 * tqdm : https://github.com/tqdm/tqdm
 
+* jSona : https://github.com/oimq/jSona
+
 ***
 
 ### Installation
