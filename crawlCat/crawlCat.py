@@ -2,10 +2,11 @@ import json
 from lxml import html
 import traceback
 from selenium import webdriver
-from crawlCat.familyCat import Cats, Kitty
+from familyCat import Cats, Kitty
 from time import sleep
 from datetime import datetime
 from tqdm import tqdm
+from random import randint as rint
 import pprint
 pp = pprint.pprint
 
@@ -16,15 +17,20 @@ class crawlCat() :
         self.source   = None
         self.cats  = Cats()
         self.cry   = cry
+        self.bars  = False
+        self.end   = False
+        self.history  = dict()
 
-    def error(self, e, msg="") :
+    def error(self, e, msg="", ex=True, cry=True) :
         print("ERROR {} : {}".format(msg, e))
-        traceback.print_exc()
+        self.end = True
+        if cry : traceback.print_exc()
+        if ex  : exit()
 
     def crying(self, items) :
         if self.cry :
             try :
-                if   type(items) == type([]) : print("Go through link : {}".format(len(items)), end="")
+                if   type(items) == type([]) : print("Go through link : {}".format(len(items)), end="\n")
                 elif type(items) == type({}) : print("Cat Crawl the items : {}".format(len(items)), end="\n")
                 print(datetime.now())
                 pp(items)
@@ -39,22 +45,31 @@ class crawlCat() :
             self.browser = None
             print("Un-supportable format : {}".format(driver))
 
-    def read(self, url, delay=0, scroll_time=0, scroll_delay=0) :
+    def read(self, url, delay=0, scroll_time=0, scroll_delay=0, cry=True) :
         try :
-            if not self.browser : raise Exception("There is no driver here.")
+            if not self.browser : raise ValueError("There is no driver here.")
             self.browser.get(url) 
             self.source   = self.browser.page_source
 
             if delay > 0 : sleep(delay)
+            last_height = 0
             while scroll_time > 0 : 
-                last_height = self.browser.execute_script("return document.body.scrollHeight")
-                self.browser.execute_script("window.scrollTo(0, document.body.scrollHeight*0.8);"); scroll_time -= 1
-                if scroll_delay > 0 : sleep(scroll_delay); 
-                self.source  += '\n'+self.browser.page_source
                 if last_height == self.browser.execute_script("return document.body.scrollHeight") : break
+                last_height = self.browser.execute_script("return document.body.scrollHeight")
+                self.browser.execute_script("window.scrollTo(0, document.body.scrollHeight*0.95);"); scroll_time -= 1
+                if scroll_delay > 0 : sleep(scroll_delay*rint(8, 12)/10)
+                self.source  += '\n'+self.browser.page_source
+                if self.cry : print("Scrolling : {} times now.".format(scroll_time))
+                if self.cry : print("Last ScrollHeight : {}, Current ScrollHeight : {}".format(
+                    last_height, self.browser.execute_script("return document.body.scrollHeight")
+                ))
+                
                 
             self.response = html.fromstring(self.source)
-
+        except ConnectionRefusedError as cr :
+            self.error(cr, "READ", cry=False, ex=True)
+        except KeyboardInterrupt as ki :
+            self.error(ki, "KEYBOARD", cry=False, ex=True)
         except Exception as e :
             self.error(e, "READ")
             self.source   = None
@@ -74,11 +89,14 @@ class crawlCat() :
                 if url : item['url'] = [url]
                 for xkey in xpaths :
                     if   type(xpaths[xkey]) == type("") :
-                        if "//" not in xpaths[xkey] :
-                            item[xkey] = xpaths[xkey]
-                        else :
-                            item[xkey] = [content.replace('\t', '').strip() \
-                                for content in self.response.xpath(xpaths[xkey]+("//text()" if istext[xkey] else ""))]
+                        try :
+                            if "//" not in xpaths[xkey] :
+                                item[xkey] = xpaths[xkey]
+                            else :
+                                item[xkey] = [content.replace('\t', '').strip() \
+                                    for content in self.response.xpath(xpaths[xkey]+("//text()" if istext[xkey] else ""))]
+                        except TypeError :
+                            print(xpaths[xkey])
                                 
                     elif type(xpaths[xkey]) == type([]) :
                         for xinx in range(len(xpaths[xkey])) :
@@ -97,63 +115,102 @@ class crawlCat() :
             if item : self.crying(item)
             return item
 
+        except KeyboardInterrupt as ki :
+            self.error(e, "KEYBOARD", cry=False, ex=True)
         except Exception as e :
-            self.error(e, "FORM")
-            return None
+            self.error(e, "FORM", ex=True)
 
     def trim(self, **kwargs) :
         default = {
-            'CHAPCHA_CHK':False, 'MULTI_NEXTS':False, 'RECUL_PAGES':False,
-            'CRAWL_DELAY':0, 'SCRLL_TIMES':0, 'SCRLL_DELAY':0,
+            'CHAPCHA_CHK':False, 'MULTI_NEXTS':False, 'RECUL_PAGES':False, 'PGERROR_CHK':False,
+            'CRAWL_DELAY':0, 'SCRLL_TIMES':0, 'SCRLL_DELAY':0, 'FIRST_EVENT':False, 'FILTER_PAGE':[],
         }
+        if 'lxn' in kwargs : self.setbars(kwargs['lxn'])
         return {k:kwargs[k] if k in kwargs else default[k] for k,dv in default.items()}
+
+    def setbars(self, lxn) :
+        self.lxn  = lxn
+        self.bars = [tqdm(total=1, position=i) for i in range(1,lxn+1)] 
 
     # ix = dictionary
     # ii = dictionary
     # lx = lists
     # li = lists
-    def crawl(self, url, ix, ii, lx, li, prefix, **kwargs) :
-        craw = self.trim(**kwargs)
-        self.read(
-            url, 
-            delay=craw['CRAWL_DELAY'], 
-            scroll_time=craw['SCRLL_TIMES'], 
-            scroll_delay=craw['SCRLL_DELAY']
-        )
+    def crawl(self, url, ix, ii, lx, li, prefix, craw, times=0) :
+        try :
+            if self.end or times > 10 : return
 
-        # Capchat check
-        if craw['CHAPCHA_CHK'] and self.checkCaptcha() :
-            while True :
-                isSolved = input("Captcha founded. After solved them, type 's' or 'solved'.")
-                if set(isSolved)&set("s", "solved") : break
-            self.crawl(url, ix, ii, lx, li, prefix, **kwargs)
-            return
+            if craw['FIRST_EVENT'] : 
+                while not input("If you ready, enter the 'go' or 'g' : ") in ['go', 'g'] : pass
+                craw['FIRST_EVENT'] = False
 
-        # Crawling
-        else :
+            self.read(
+                url, 
+                delay=craw['CRAWL_DELAY'], 
+                scroll_time=craw['SCRLL_TIMES'], 
+                scroll_delay=craw['SCRLL_DELAY']
+            )
+            
+            # Page check - is it okay?
+            if craw['CHAPCHA_CHK'] and self.checkCaptcha() :
+                while True :
+                    isSolved = input("Captcha founded. After solved them, type 's' or 'solved'.")
+                    if set(isSolved)&set("s", "solved") : break
+                self.crawl(url, ix, ii, lx, li, prefix, craw)
+                return
+            if craw['PGERROR_CHK'] and self.checkPgError(craw['PGERROR_CHK']) : 
+                wait_seconds = rint((times*10+10)*0.8, times*10+10*1.2)
+                if self.cry : print("Page is stoped... after wait a {} seconds, then restart the crawl.".format(wait_seconds))
+                sleep(wait_seconds)
+                self.crawl(url, ix, ii, lx, li, prefix, craw, times+1)
+                return
+            if craw['FILTER_PAGE'] :
+                for filter_meta in craw['FILTER_PAGE'] :
+                    if self.checkFilterW(filter_meta[0], filter_meta[1]) : 
+                        if self.cry : print("Page is filtered : {}".format(url))
+                        return
+            
+            # Crawling
             if len(lx) > 0 :   # If link_xpath are exist, get all next page sources
-                if craw['RECUL_PAGES'] : self.crawl(url, ix, ii, lx[1:], li[1:], prefix, **kwargs)  # Go though the next page - Recursion
                 links = self.form(lx[:1], li[:1])
+                if craw['RECUL_PAGES'] : self.crawl(url, ix, ii, lx[1:], li[1:], prefix, craw) # Dig also root url
                 if links :
+                    links = list(set(links)) # Remove duplicated links
+                    if self.bars: self.bars[self.lxn-len(lx)].reset(); self.bars[self.lxn-len(lx)].total = len(links)
                     if craw['MULTI_NEXTS'] and links : links = [links[-1]] if len(links) == 2 else links
                     for link in links :         # Go thought the inside pages.
                         if prefix not in link  : link = prefix + link
-                        if craw['RECUL_PAGES'] : self.crawl(link, ix, ii, lx, li, prefix, **kwargs)
-                        else                   : self.crawl(link, ix, ii, lx[1:], li[1:], prefix, **kwargs)
-                    
-                else : return           # none link -> just return
+                        self.crawl(link, ix, ii, lx[1:], li[1:], prefix, craw)
+                        if self.bars : self.bars[self.lxn-len(lx)].update(1)
+            else :
+                self.cats.add(Kitty(**self.form(ix, ii, url))) # Need to edit.
 
-            else :                      # If there are no link_xpath, now it is time for getting items!
-                items = self.form(ix, ii, url)
-                if items : self.cats.add(Kitty(**items))
-                
+        except KeyboardInterrupt as ki :
+            self.error(ki, "KEYBOARD", cry=False, ex=True)
+            raise ki                
+        except Exception as e:
+            traceback.print_exc()
+            self.error(e, "CRAWL", cry=False, ex=False)
+
+    def checkPgError(self, xpath) :
+        page_status = self.form({'p':xpath}, {'p':False})['p']
+        if page_status and ('error' in page_status or '오류' in page_status) : return True
+        else                                                                 : return False
 
     def checkCaptcha(self) :
         if "validateCaptcha" in self.source :   return True
         else                                :   return False
 
+    def checkFilterW(self, xpath, fword) :
+        words = self.form({'f':xpath}, {'f':False})['f']
+        if len(list(filter(lambda w : fword in w, words))) > 0 : return True
+        else                                                   : return False
+
     def save(self, cpath) :
         self.cats.save(cpath)
 
     def quit(self) :
+        if self.bars : 
+            for bar in self.bars : bar.close()
         self.browser.quit()
+        self.brower = None

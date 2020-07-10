@@ -8,7 +8,7 @@ For that, you should make the frames file, keywords file and configs file (json 
 {
     "identifier" : {
         'site' : 'www.crawlcat.com',
-        'qurl' : 'www.crawlcat.com?keyword='
+        'qurl' : 'www.crawlcat.com?keyword=[%]&parameter=yahong'
         "link_xpaths": [ "xpath", ... ], 
         "link_istext": [ bool, ... ], 
         "item_xpaths": { "field" : "xpath", ... }, 
@@ -71,7 +71,7 @@ def loadJson(cpath) :
     try :
         with open(cpath) as openfile :
             return json.load(openfile)
-        print("\Load success. {}\n".format(cpath))
+        # print("\Load success. {}\n".format(cpath))
     except Exception as e :
         error(e, "LOAD JSON", ise=True)
 
@@ -93,24 +93,26 @@ if __name__=='__main__' :
 
     frames, keywords, configs = loadJson(sys.argv[4]), loadJson(sys.argv[5]), loadJson(sys.argv[6])
     prefix, qurl, link_xpaths, link_istext, item_xpaths, item_istext = frames[identifier].values()
-    urls = ["{}{}{}".format(qurl, mainkw, subkw) for mainkw in keywords for subkw in keywords[mainkw]]
+    urls = [qurl.replace("[%]", "{}{}".format(mainkw, subkw)) for mainkw in keywords for subkw in keywords[mainkw]]
 
     # Crawling
-    crawl = crawlCat(dpath, cry=(True if "i" in show else False))
+    cat = crawlCat(dpath, cry=(True if "i" in show else False))
     if 'p' in show : pbar = tqdm(total=len(urls))
     try :
+        craw = cat.trim(lxn=len(link_xpaths), **configs[identifier])
         for uinx in range(len(urls)) :
-            crawl.crawl(
-                urls[uinx], item_xpaths, item_istext, link_xpaths, link_istext, prefix=prefix,
-                **configs[identifier]) 
+            cat.crawl(
+                urls[uinx], item_xpaths, item_istext, link_xpaths, link_istext, prefix=prefix, craw=craw) 
             if 'p' in show : pbar.update(1)
             if wait > 0 : sleep(rint(int(wait*0.8), int(wait*1.2))/1000)
-        crawl.save(opath)
+
     except Exception as e :
         error(e, "FOUNDED", False)
-        crawl.save(opath)
-        input() # wait!
-    finally :    
-        crawl.quit()
+        cat.save(opath)
+        # input() # wait!
+        
+    finally :  
+        cat.save(opath)  
+        cat.quit()
         if 'p' in show : pbar.close()
         exit()

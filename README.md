@@ -12,15 +12,25 @@ for installing, requires are below :
 
 ***
 
+### Installation
+```
+pip3 install crawlCat-master
+```
+
+***
+
 ### Projects
 
-crawlCat is consisted by three parts
+crawlCat is consisted by two parts
 
 * crawlCat : Crawl and scrap module for websites.
 
-* familyCat : Has the data structure (key-values)
+* familyCat : Having the data structure (key-values)
 
-* lookCat : Configuration of crawlCat module.
+
+demo has that configure and run the crawlCat.
+
+* tarGetor : Configuration of crawlCat module.
 
 * runCat : Run the crawling and scraping
 
@@ -28,16 +38,34 @@ crawlCat is consisted by three parts
 
 ### Configuration
 
+We defined the configurations of crawlCat at demo/tarGetor.py
+
 ```
+ * configs example
+{
+    'identifier':{
+        'CHAPCHA_CHK':bool, # If chapcha occur, immediately stops.
+        'MULTI_NEXTS':bool, # If there are two links, select last one.
+        'RECUL_PAGES':bool, # Crawl again to url which make link not item.
+        'CRAWL_DELAY':int,  # Seconds.
+        'SCRLL_TIMES':int,  # Scrolling if the scroll space is left.
+        'SCRLL_DELAY':int,  # Seconds.
+        'FIRST_EVENT':bool, # Stops when first comes.
+        'PROGR_TBARS':bool, # Show the Progress bars
+        'PGERROR_CHK':bool, # If a page has 'error' or '오류', skips. 
+        'FILTER_PAGE':[('xpath', 'keyword')], # if xpath item has keyword, skips.
+    },
+}
+
  * Frames example
 {
-    "ccat" : {
-        'site' : 'www.crawlcat.com',
-        'qurl' : 'www.crawlcat.com?keyword='
+    "identifier" : {
+        'url' : 'https://www.cat.com/',
+        'qurl' : https://'www.cat.com/search?keyword=[%]&parameter=yahon'
         "link_xpaths": [ "xpath", ... ], 
-        "link_istext": [ bool, ... ], 
+        "link_istext": [ bool,    ... ], 
         "item_xpaths": { "field" : "xpath", ... }, 
-        "item_istext": { "field" : bool, ... }
+        "item_istext": { "field" : bool,    ... }
     },
 }
 
@@ -46,31 +74,52 @@ crawlCat is consisted by three parts
     "main" : [ "sub0", "sub1", ... ],
 }
 
- * configs example
- {
-    "identifier": {
-        "CHAPCHA_CHK": false, 
-        "MULTI_NEXTS": false, 
-        "CRAWL_DELAY": 1, 
-        "SCRLL_TIMES": 1, 
-        "SCRLL_DELAY": 2
-    }
-}
+
 ```
 
 ***
 
 ### Example
 
-* Script
+* Setting Scripts
+
 ```code
-python runCat driver_path output_path ccat frames_path keywords_path configs_path options
+python tarGetor.py
 ```
 
 * Output
 ```code
-Go through link : [~]
-Cat Crawl the items : {~}
+SAVE SUCCESS TO [ ./demo/keywords.json ]
+SAVE SUCCESS TO [ ./demo/frames.json ]
+SAVE SUCCESS TO [ ./demo/configs.json ]
+```
+
+<br/><br/>
+
+* Start Crawling
+```
+python ./demo/runCat.py ./chromedriver ./demo/scraped.json stocksnap \
+    ./demo/frames.json ./demo/keywords.json ./demo/configs.json \
+    -wt 1000 -li
+```
+
+* Output
+```
+Cat Crawl the items : 4
+2020-07-10 13:09:17.344892
+{'alt': ['yellow flower close up'],
+ 'src': ['https://cdn.stocksnap.io/img-thumbs/960w/yellow-flower_GWT9JVALSV.jpg'],
+ 'tags': ['yellow',
+          'flower',
+          ...
+          'plants',
+          'vegetation',
+          'beautiful'],
+ 'url': ['https://stocksnap.io//photo/yellow-flower-GWT9JVALSV']}
+
+Save data success. ./demo/scraped.json
+
+100%|█████████████████| 48/48 [06:25<00:00,  8.04s/it]
 ```
 
 ***
