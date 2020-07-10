@@ -1,1 +1,19 @@
-{"stocksnap": {"CHAPCHA_CHK": false, "MULTI_NEXTS": false, "RECUL_PAGES": false, "CRAWL_DELAY": 2, "SCRLL_TIMES": 10, "SCRLL_DELAY": 4, "FIRST_EVENT": false, "PROGR_TBARS": true, "PGERROR_CHK": false, "FILTER_PAGE": [["//head/meta[3]/@content", "shutterstock"]]}}
+{
+    "stocksnap": {
+        "CHAPCHA_CHK": false,
+        "MULTI_NEXTS": false,
+        "RECUL_PAGES": false,
+        "CRAWL_DELAY": 2,
+        "SCRLL_TIMES": 10,
+        "SCRLL_DELAY": 4,
+        "FIRST_EVENT": false,
+        "PROGR_TBARS": true,
+        "PGERROR_CHK": false,
+        "FILTER_PAGE": [
+            [
+                "//head/meta[3]/@content",
+                "shutterstock"
+            ]
+        ]
+    }
+}
