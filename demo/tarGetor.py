@@ -1,6 +1,5 @@
-from jSona import jSona
+from jSona import load, save
 from os.path import join
-sj = jSona().saveJson
 
 def generate_keywords(isSave=False, cpath='./keywords.json') :
     keywords = {
@@ -8,7 +7,7 @@ def generate_keywords(isSave=False, cpath='./keywords.json') :
              "cooking", "fruit"
         ],
     }
-    if isSave   : sj(cpath, keywords)
+    if isSave   : load(cpath, keywords)
     else        : return keywords
 
 def generate_frames(isSave=False, cpath='./frames.json') :
@@ -34,7 +33,7 @@ def generate_frames(isSave=False, cpath='./frames.json') :
             }
         },
     }
-    if isSave   : sj(cpath, frames)
+    if isSave   : load(cpath, frames)
     else        : return frames
 
 def generate_config(isSave=False, cpath='./configs.json') :
@@ -52,7 +51,7 @@ def generate_config(isSave=False, cpath='./configs.json') :
             'FILTER_PAGE':[('//head/meta[3]/@content', 'shutterstock')],
         },
     }
-    if isSave   : sj(cpath, frames)
+    if isSave   : load(cpath, frames)
     else        : return frames
 
 if __name__=="__main__" :

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name="crawlCat",
-      version=2.3,
+      version=2.9,
       url='https://github.com/oimq/crawlCat',
       author="oimq",
       author_email='taep0q@gmail.com',
