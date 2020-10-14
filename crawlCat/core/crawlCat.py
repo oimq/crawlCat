@@ -7,6 +7,7 @@ from time import sleep
 from datetime import datetime
 from tqdm import tqdm
 from random import randint as rint
+from functools import reduce
 import pprint
 pp = pprint.pprint
 
@@ -30,9 +31,9 @@ class crawlCat() :
     def crying(self, items) :
         if self.cry :
             try :
-                if   type(items) == type([]) : print("Go through link : {}".format(len(items)), end="\n")
-                elif type(items) == type({}) : print("Cat Crawl the items : {}".format(len(items)), end="\n")
                 print(datetime.now())
+                if   type(items) == type([]) : print(" - Go Through Links : {}".format(len(items)), end="\n")
+                elif type(items) == type({}) : print(" - Cat Crawl the Items : {}".format(len(items)), end="\n")
                 pp(items)
             except Exception as e:
                 self.error(e, 'CRY')
@@ -49,9 +50,10 @@ class crawlCat() :
         try :
             if not self.browser : raise ValueError("There is no driver here.")
             self.browser.get(url) 
-            self.source   = self.browser.page_source
 
             if delay > 0 : sleep(delay)
+            self.source = self.browser.page_source
+
             last_height = 0
             while scroll_time > 0 : 
                 if last_height == self.browser.execute_script("return document.body.scrollHeight") : break
@@ -63,8 +65,8 @@ class crawlCat() :
                 if self.cry : print("Last ScrollHeight : {}, Current ScrollHeight : {}".format(
                     last_height, self.browser.execute_script("return document.body.scrollHeight")
                 ))
-                
-                
+            
+            
             self.response = html.fromstring(self.source)
         except ConnectionRefusedError as cr :
             self.error(cr, "READ", cry=False, ex=True)
@@ -105,6 +107,8 @@ class crawlCat() :
                             if len(item[xkey]) > 0 : break
 
             elif type(xpaths) == type([]) and len(xpaths) == len(istext) :
+                if xpaths and type(xpaths[0])==type([]) : xpaths = reduce(lambda x,y:x+y, xpaths)
+                if istext and type(istext[0])==type([]) : istext = reduce(lambda x,y:x+y, istext)
                 item = list()
                 for xinx in range(len(xpaths)) :
                     if "//" not in xpaths[xinx] :
@@ -112,7 +116,7 @@ class crawlCat() :
                     else :
                         item = item + self.response.xpath(xpaths[xinx]+("//text()" if istext[xinx] else ""))
             
-            if item : self.crying(item)
+            self.crying(item)
             return item
 
         except KeyboardInterrupt as ki :
@@ -130,39 +134,51 @@ class crawlCat() :
 
     def setbars(self, lxn) :
         self.lxn  = lxn
-        self.bars = [tqdm(total=1, position=i) for i in range(1,lxn+1)] 
+        self.sbar = tqdm(bar_format="{desc}", desc="Initializing...", position=2)
+        self.bars = [tqdm(total=1, position=i) for i in range(3,lxn+3)] 
 
-    # ix = dictionary
-    # ii = dictionary
-    # lx = lists
-    # li = lists
-    def crawl(self, url, ix, ii, lx, li, prefix, craw, times=0) :
+    # ix = dictionary, item_xpath
+    # ii = dictionary, item_istext
+    # gi = lists, get_items
+    # lx = lists, link_xpath
+    # li = lists, link_istext
+    def crawl(self, url, ix, ii, gi, lx, li, prefix, craw, times=0) :
         try :
             if self.end or times > 10 : return
+            if self.bars : self.sbar.set_description(desc="We visit the URL : {}".format(url))
+
+            # pp([url, ix, ii, gi, lx, li])
 
             if craw['FIRST_EVENT'] : 
-                while not input("If you ready, enter the 'go' or 'g' : ") in ['go', 'g'] : pass
+                if self.cry : 
+                    while not input("If you ready, enter the 'go' or 'g' : ") in ['go', 'g'] : pass
+                self.read(
+                    url, 
+                    delay=craw['CRAWL_DELAY']+(craw['FIRST_EVENT'] if type(craw['FIRST_EVENT'])==type(0) else 0), 
+                    scroll_time=craw['SCRLL_TIMES'], 
+                    scroll_delay=craw['SCRLL_DELAY']
+                )
                 craw['FIRST_EVENT'] = False
-
-            self.read(
-                url, 
-                delay=craw['CRAWL_DELAY'], 
-                scroll_time=craw['SCRLL_TIMES'], 
-                scroll_delay=craw['SCRLL_DELAY']
-            )
+            else :
+                self.read(
+                    url, 
+                    delay=craw['CRAWL_DELAY'], 
+                    scroll_time=craw['SCRLL_TIMES'], 
+                    scroll_delay=craw['SCRLL_DELAY']
+                )
             
             # Page check - is it okay?
             if craw['CHAPCHA_CHK'] and self.checkCaptcha() :
                 while True :
                     isSolved = input("Captcha founded. After solved them, type 's' or 'solved'.")
                     if set(isSolved)&set("s", "solved") : break
-                self.crawl(url, ix, ii, lx, li, prefix, craw)
+                self.crawl(url, ix, ii, gi, lx, li, prefix, craw)
                 return
             if craw['PGERROR_CHK'] and self.checkPgError(craw['PGERROR_CHK']) : 
                 wait_seconds = rint((times*10+10)*0.8, times*10+10*1.2)
                 if self.cry : print("Page is stoped... after wait a {} seconds, then restart the crawl.".format(wait_seconds))
                 sleep(wait_seconds)
-                self.crawl(url, ix, ii, lx, li, prefix, craw, times+1)
+                self.crawl(url, ix, ii, gi, lx, li, prefix, craw, times+1)
                 return
             if craw['FILTER_PAGE'] :
                 for filter_meta in craw['FILTER_PAGE'] :
@@ -173,17 +189,19 @@ class crawlCat() :
             # Crawling
             if len(lx) > 0 :   # If link_xpath are exist, get all next page sources
                 links = self.form(lx[:1], li[:1])
-                if craw['RECUL_PAGES'] : self.crawl(url, ix, ii, lx[1:], li[1:], prefix, craw) # Dig also root url
+                if craw['RECUL_PAGES'] : self.crawl(url, ix, ii, gi[1:], lx[1:], li[1:], prefix, craw) # Dig also root url
                 if links :
                     links = list(set(links)) # Remove duplicated links
                     if self.bars: self.bars[self.lxn-len(lx)].reset(); self.bars[self.lxn-len(lx)].total = len(links)
                     if craw['MULTI_NEXTS'] and links : links = [links[-1]] if len(links) == 2 else links
                     for link in links :         # Go thought the inside pages.
                         if prefix not in link  : link = prefix + link
-                        self.crawl(link, ix, ii, lx[1:], li[1:], prefix, craw)
+                        self.crawl(link, ix, ii, gi[1:], lx[1:], li[1:], prefix, craw)
                         if self.bars : self.bars[self.lxn-len(lx)].update(1)
-            else :
-                self.cats.add(Kitty(**self.form(ix, ii, url))) # Need to edit.
+            
+            # Store the Items
+            if len(gi)>0 and gi[0] :
+                self.cats.add(Kitty(**self.form(ix, ii, url)))
 
         except KeyboardInterrupt as ki :
             self.error(ki, "KEYBOARD", cry=False, ex=True)
@@ -193,7 +211,7 @@ class crawlCat() :
             self.error(e, "CRAWL", cry=False, ex=False)
 
     def checkPgError(self, xpath) :
-        page_status = self.form({'p':xpath}, {'p':False})['p']
+        page_status = self.form({'Page Error':xpath}, {'Page Error':False})['Page Error']
         if page_status and ('error' in page_status or '오류' in page_status) : return True
         else                                                                 : return False
 
@@ -202,7 +220,7 @@ class crawlCat() :
         else                                :   return False
 
     def checkFilterW(self, xpath, fword) :
-        words = self.form({'f':xpath}, {'f':False})['f']
+        words = self.form({'Filter Word':xpath}, {'Filter Word':False})['Filter Word']
         if len(list(filter(lambda w : fword in w, words))) > 0 : return True
         else                                                   : return False
 
