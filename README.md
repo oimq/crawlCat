@@ -44,8 +44,6 @@ We defined the configuration files in demo/templates/
 
 ##### We will migrate configurations to database
 
-```
-
 ***
 
 ### Example
