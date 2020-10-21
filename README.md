@@ -50,22 +50,9 @@ We defined the configuration files in demo/templates/
 
 ### Example
 
-* Setting Scripts
-
-```code
-python tarGetor.py
-```
-
-* Output
-```code
-SAVE SUCCESS TO [ ./demo/keywords.json ]
-SAVE SUCCESS TO [ ./demo/frames.json ]
-SAVE SUCCESS TO [ ./demo/configs.json ]
-```
-
 <br/><br/>
 
-* Start Crawling
+* Start Crawling Demo
 
 Before run the command, set the enviornment variables
 
