@@ -12,27 +12,28 @@ from random import uniform
 from pyLog import Logger
 
 logger = Logger(isWrite=False)
-logger.set('name', 'crawlCat')
 log = logger.log
 
 class crawlCat() :
-    def __init__(self, configs, driver_path :str, extensions_paths :list =[], max_pool :int =1000, write_path =None, mode='debug') :
+    def __init__(self, configs, driver_path :str, extensions_paths :list =[], max_pool :int =1000, write_path =None, mode ='debug', name ='crawlCat') :
         log("Hello, Welcome to crawlCat! - Cat initializes the module.")
         try :
+            # crawlCat set
             self.configs = configs
             self.browser = self.get_browser(driver_path, extensions_paths)
             self.claw    = self.set('claw')
             self.max_pool= max_pool
             self.pool    = []
             self.depth   = len(configs['layouts']['link_xpaths'])
-
             self.family  = Family()
-
+            # Logger set
+            logger.set('name', name)
+            if write_path : logger.set_write(write_path)
             if mode == 'debug' : logger.set('level', 0)
         except Exception as e :
             self.error(e, "INIT", ex=True, cry=True)
         else :
-            log("Driver is set. Don't remove the browser window until the end.")
+            log("Chrome driver is set. Don't remove the browser's window until the end.")
 
         # self.response = None
         # self.source   = None
@@ -70,7 +71,7 @@ class crawlCat() :
         except ConnectionRefusedError as cre :
             self.error(cre, "LOAD - "+url, ex=False)
         except KeyboardInterrupt as kie :
-            self.error(kie, "KEYBOARD")
+            self.error("Detect the ctrl+c.", "KEYBOARD", cry=False)
         except Exception as e :
             self.error(e, "LOAD - "+url)
 
@@ -90,7 +91,7 @@ class crawlCat() :
             log("Cat gets the {} size page from {}".format(len(page_source), url), 'd')
             return html.fromstring(page_source)
         except KeyboardInterrupt as kie :
-            self.error(kie, "KEYBOARD")
+            self.error("Detect the ctrl+c.", "KEYBOARD", cry=False)
         except Exception as e :
             self.error(e, "READ - "+url)
 
@@ -103,7 +104,7 @@ class crawlCat() :
             while scroll_count > 0 :
                 scroll_heights = self.scroll(scroll_delay, scroll_ratio)
                 if scroll_heights :
-                    log("Cat scrolls the page, Bar heights : {} -> {}".format(*scroll_heights))
+                    log("Cat scrolls the page, Bar heights : {} -> {}".format(*scroll_heights), 'd')
                     page_source += "\n"+self.load(url)
                     scroll_count -= 1
                 else :
@@ -111,38 +112,39 @@ class crawlCat() :
             log("Cat gets the {} size page from {}".format(len(page_source), url), 'd')
             return html.fromstring(page_source)
         except KeyboardInterrupt as kie :
-            self.error(kie, "KEYBOARD")
+            self.error("Detect the ctrl+c.", "KEYBOARD", cry=False)
         except Exception as e :
             self.error(e, "READ - "+url)
 
-    def form(self, page_source, xpaths) :
+    def form(self, page_sources, xpaths) :
         item = None
-        if len(page_source) < 1 : log("There is no page source. skip.", "w")
+        if len(page_sources) < 1 : log("There is no page source. skip.", "w")
         else :
-            # Get items
-            if type(xpaths) == type({}) :
-                item = dict()
-                for xkey in xpaths :
-                    if type(xpaths[xkey]) == type("") : xpaths[xkey] = [xpaths[xkey]]
-                    for xpath in xpaths[xkey] :
-                        if "//" not in xpath : 
-                            item[xkey] = [xpath]
-                        else :
-                            item[xkey] = [extr.replace('\t', '').strip() for extr in page_source.xpath(xpath)]
-                        if len(item[xkey]) > 0 : break
-                log("Success to getting the items : {}".format(str(item)), 'd')
+            for page_source in page_sources :
+                # Get items
+                if type(xpaths) == type({}) :
+                    item = dict()
+                    for xkey in xpaths :
+                        if type(xpaths[xkey]) == type("") : xpaths[xkey] = [xpaths[xkey]]
+                        for xpath in xpaths[xkey] :
+                            if "//" not in xpath : 
+                                item[xkey] = [xpath]
+                            else :
+                                item[xkey] = [extr.replace('\t', '').strip() for extr in page_source.xpath(xpath)]
+                            if len(item[xkey]) > 0 : break
+                    log("Success to getting the items : {}".format(str(item)), 'd')
 
-            # Get links
-            elif type(xpaths) == type("") or type(xpaths) == type("[]") :
-                item = list()
-                if type(xpaths) == type("") : xpaths = [xpaths]
-                for xpath in xpaths :
-                    item += page_source.xpath(xpath)
-                log("Success to getting the links : {}".format(str(item)), 'd')
+                # Get links
+                elif type(xpaths) == type("") or type(xpaths) == type("[]") :
+                    item = list()
+                    if type(xpaths) == type("") : xpaths = [xpaths]
+                    for xpath in xpaths :
+                        item += page_source.xpath(xpath)
+                    log("Success to getting the links : {}".format(str(item)), 'd')
 
-            # Unknown xpath type
-            else :
-                log("Unknown xpath type : {}, only possible str, list and dict".format(type(xpaths)), 'w')
+                # Unknown xpath type
+                else :
+                    log("Unknown xpath type : {}, only possible str, list and dict".format(type(xpaths)), 'w')
         return item
 
     def quit(self) :
@@ -163,26 +165,62 @@ class crawlCat() :
         for v in item.values() :
             if len(v) > 0 : return False
         return True
+    
+    # Create the init urls
+    def create_urls(self) :
+        return [
+            self.configs['info']['query'].replace("[%mk]",mk).replace("[%sk]",sk) 
+            for mk in self.configs['keywords'] for sk in self.configs['keywords'][mk]
+        ]
+
+    def run(self) :
+        if self.configs['options']['delay']['first'] > 0:
+            log("Cat waits {} seconds before crawling".format(self.configs['options']['delay']['first']), 'd')
+            sleep(self.configs['options']['delay']['first'])
+        urls = self.create_urls()
+        log("Cat start to crawling {} number of urls".format(len(urls)), 'd')
+        for url in urls : self.crawl(url, 0)
+
+    def isPass(self, url, page_sources) :
+        if self.configs['options']['filter']['url'] and url in self.configs['options']['filter']['url'] :
+            return True
+        if self.configs['options']['filter']['page'] :
+            for xp, kw in self.configs['options']['filter']['page'] :
+                for cw in page_sources[0].xpath(xp) :
+                    if kw in cw : return True
+        return False
+
+    def isStop(self, page_sources) :
+        if self.configs['options']['check']['chapcha'] :
+            for xp, kw in self.configs['options']['check']['chapcha'] :
+                if kw in self.form(page_sources, {"box":xp})['box'] :
+                    return "STOP : Chapcha page {}".format(kw)
+        if self.configs['options']['check']['error'] :
+            for xp, kw in self.configs['options']['check']['error'] :
+                if kw in self.form(page_sources, {"box":xp})['box'] :
+                    return "STOP : Error page {}".format(kw)
+        return False
         
     # lxi : link xpath index
     def crawl(self, url, loc) :
         try :          
-            log("Cat crawl the url : {}".format(url), 'd')
-            page_source = self.claw(url)
+            log("Cat crawl the url : {}, Current location : {}".format(url, loc), 'd')
+            page_sources = [self.claw(url)]
 
-            # Get the links
-            if self.depth > loc :
-                log('Get the links, depth {} > {} loc'.format(self.depth, loc), 'd')
-                links = self.form(page_source, self.configs['layouts']["link_xpaths"][loc])
-                for link in links :
-                    if self.isVaild(link) : self.crawl(link, loc+1)
-            
+            isPass, isStop = self.isPass(url, page_sources), self.isStop(page_sources)
+            if isPass : 
+                return
+            elif isStop :
+                while True :
+                    if input("{} occur, Type 'g' or 'go' for retry.".format(isStop)) in ['g', 'go'] : break
+                return self.craw(url, loc)
+
             # Get the items
-            ginx = self.configs['layouts']['get_indices'][loc]
+            ginx, items = self.configs['layouts']['get_indices'][loc], None
             if ginx != -1 and ginx < len(self.configs['layouts']["item_xpaths"]):
                 log('Get the items, get_indices {} at loc {}'.format(self.configs['layouts']['get_indices'][loc], loc), 'd')
                 items = self.form(
-                    page_source,
+                    page_sources,
                     self.configs['layouts']["item_xpaths"][ginx]
                 )
                 if self.configs['options']['filter']['empty'] and self.isEmpty(items) : 
@@ -190,10 +228,19 @@ class crawlCat() :
 
                 # Store the Items
                 self.family.add(items)
-                log('Success to store items : {}'.format(items), 'd')
+                log('Success to store items to family : {}'.format(items), 'd')
 
+            # Get the links
+            if self.depth > loc :
+                log('Get the links, depth {} > {} loc'.format(self.depth, loc), 'd')
+                links = self.form(page_sources, self.configs['layouts']["link_xpaths"][loc])
+                del page_sources, items, url, ginx
+                for link in links :
+                    if self.configs['options']['delay']['total'] > 0 : sleep(self.configs['options']['delay']['total'])
+                    if self.isVaild(link) : self.crawl(link, loc+1)
+            
         except KeyboardInterrupt as ki :
-            self.error(ki, "KEYBOARD", cry=False, ex=True)
+            self.error("Detect the ctrl+c.", "KEYBOARD", cry=False)
         except Exception as e:
             traceback.print_exc()
             self.error(e, "CRAWL", cry=False, ex=False)
@@ -202,6 +249,8 @@ class crawlCat() :
         if "[%time]" in cpath : cpath = cpath.replace("[%time]", str(datetime.now()).replace(" ", "-"))
         self.family.save(cpath)
         log("Cat saves the {} number of family to {}".format(self.family.size(), cpath))
+
+from os.path import join
 
 if __name__=="__main__" :
     driver_path = "/home/park/myCrawling/drivers/chromedriver"

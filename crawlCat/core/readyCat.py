@@ -74,10 +74,19 @@ class Parser :
 
     def append_arguments(self) :
         self.parser.add_argument(
+            '-n', '--num-proc',
+            help="Number of Crawler Processes",
+            metavar="number",
+            type=int,
+            nargs="?",
+            required=False,
+            default=1
+        )
+        self.parser.add_argument(
             '-e', '--extensions-paths',
             help="Paths for Extensions of Chrome",
             metavar="path, ...",
-            type=list,
+            type=str,
             nargs="*",
             required=False,
             default=[]
@@ -171,6 +180,9 @@ class Parser :
     
     def get_driver_path(self) :
         return self.ns.driver_path
+
+    def get_num_proc(self) :
+        return self.ns.num_proc
 
     def get_options(self) :
         return {

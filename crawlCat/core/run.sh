@@ -3,5 +3,7 @@ python runCat.py \
 -k /home/park/myCrawling/modules/crawlCat/crawlCat/demo/templates/keywords.json \
 -l /home/park/myCrawling/modules/crawlCat/crawlCat/demo/templates/layouts.json \
 -o /home/park/myCrawling/modules/crawlCat/crawlCat/demo/templates/options.json \
--d /home/park/myCrawling/drivers/chromedriver
--e [/home/park/myCrawling/drivers/chrome_text_mode.crx]
+-d /home/park/myCrawling/drivers/chromedriver \
+-e /home/park/myCrawling/drivers/chrome_text_mode.crx \
+-w /home/park/myCrawling/modules/crawlCat/crawlCat/demo/logs/ \
+-n 4
