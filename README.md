@@ -66,16 +66,30 @@ SAVE SUCCESS TO [ ./demo/configs.json ]
 <br/><br/>
 
 * Start Crawling
+
+Before run the command, set the enviornment variables
+
 ```
-python ./demo/runCat.py ./chromedriver ./demo/scraped.json stocksnap \
-    ./demo/frames.json ./demo/keywords.json ./demo/configs.json \
-    -wt 1000 -li
+export $CRAWLCAT_HOME=your crawlCat path/crawlCat-master/crawlCat
+export CHROME_DRIVER_PATH=your Chrome driver path
+```
+
+```
+python $CRAWLCAT_HOME/core/runCat.py \
+-i $CRAWLCAT_HOME/demo/templates/info.json \
+-k $CRAWLCAT_HOME/demo/templates/keywords.json \
+-l $CRAWLCAT_HOME/demo/templates/layouts.json \
+-o $CRAWLCAT_HOME/demo/templates/options.json \
+-d $CHROME_DRIVER_PATH/chromedriver \
+-e $CHROME_DRIVER_PATH/chrome_text_mode.crx \
+-w $CRAWLCAT_HOME/demo/logs/ \
+-s $CRAWLCAT_HOME/demo/outputs/final-[%time].json \
+-n 4
 ```
 
 * Output
 ```
-Cat Crawl the items : 4
-2020-07-10 13:09:17.344892
+...
 {'alt': ['yellow flower close up'],
  'src': ['https://cdn.stocksnap.io/img-thumbs/960w/yellow-flower_GWT9JVALSV.jpg'],
  'tags': ['yellow',
@@ -85,10 +99,9 @@ Cat Crawl the items : 4
           'vegetation',
           'beautiful'],
  'url': ['https://stocksnap.io//photo/yellow-flower-GWT9JVALSV']}
-
-Save data success. ./demo/scraped.json
-
-100%|█████████████████| 48/48 [06:25<00:00,  8.04s/it]
+...
+INFO  2020-10-21 18:40:28.061336 cCat 0 | Cat saves the 0 number of family to /home/park/myCrawling/modules/crawlCat/crawlCat/demo/outputs/final-2020-10-21-18:40:28.061190.json
+INFO  2020-10-21 18:40:28.061391 cCat 0 | Quit the crawlCat, Bye-nya~
 ```
 
 ***
