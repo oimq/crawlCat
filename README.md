@@ -8,15 +8,15 @@ for installing, requires are below :
 
 * chrome driver that matches your chrome version : https://chromedriver.chromium.org/downloads
 
-* tqdm : https://github.com/tqdm/tqdm
-
 * jSona : https://github.com/oimq/jSona
+
+* pyLog : https://github.com/oimq/pyLog
 
 ***
 
 ### Installation
 
-before you start, please install the jSona by above url
+before you start, please install the jSona from above url
 
 ```
 pip3 install crawlCat-master
@@ -26,59 +26,23 @@ pip3 install crawlCat-master
 
 ### Projects
 
-crawlCat is consisted by two parts
+crawlCat is consisted by two parts.
 
-* crawlCat : Crawl and scrap module for websites.
+* crawlCat : Crawl and scrap module for target websites.
 
-* familyCat : Having the data structure (key-values)
+* familyCat : Data structure (key-values).
 
-
-demo has that configure and run the crawlCat.
-
-* tarGetor : Configuration of crawlCat module.
-
-* runCat : Run the crawling and scraping
+* runCat : Run the crawlCat by command line.
 
 ***
 
 ### Configuration
 
-We defined the configurations of crawlCat at demo/tarGetor.py
+For using runCat, that need 4 configuration files : info.json, keywords.json, layouts.json, options.json
 
-```
- * configs example
-{
-    'identifier':{
-        'CHAPCHA_CHK':bool, # If chapcha occur, immediately stops.
-        'MULTI_NEXTS':bool, # If there are two links, select last one.
-        'RECUL_PAGES':bool, # Crawl again to url which make link not item.
-        'CRAWL_DELAY':int,  # Seconds.
-        'SCRLL_TIMES':int,  # Scrolling if the scroll space is left.
-        'SCRLL_DELAY':int,  # Seconds.
-        'FIRST_EVENT':bool, # Stops when first comes.
-        'PROGR_TBARS':bool, # Show the Progress bars
-        'PGERROR_CHK':bool, # If a page has 'error' or '오류', skips. 
-        'FILTER_PAGE':[('xpath', 'keyword')], # if xpath item has keyword, skips.
-    },
-}
+We defined the configuration files in demo/templates/
 
- * Frames example
-{
-    "identifier" : {
-        'url' : 'https://www.cat.com/',
-        'qurl' : https://'www.cat.com/search?keyword=[%]&parameter=yahon'
-        "link_xpaths": [ "xpath", ... ], 
-        "link_istext": [ bool,    ... ], 
-        "item_xpaths": { "field" : "xpath", ... }, 
-        "item_istext": { "field" : bool,    ... }
-    },
-}
-
- * Keywords example
-{
-    "main" : [ "sub0", "sub1", ... ],
-}
-
+##### We will migrate configurations to database
 
 ```
 

@@ -74,6 +74,15 @@ class Parser :
 
     def append_arguments(self) :
         self.parser.add_argument(
+            '-s', '--save-path',
+            help="Path for save outputs",
+            metavar="path",
+            type=str,
+            nargs="?",
+            required=False,
+            default="./final-[%time].json"
+        )
+        self.parser.add_argument(
             '-n', '--num-proc',
             help="Number of Crawler Processes",
             metavar="number",
@@ -180,6 +189,9 @@ class Parser :
     
     def get_driver_path(self) :
         return self.ns.driver_path
+
+    def get_save_path(self) :
+        return self.ns.save_path
 
     def get_num_proc(self) :
         return self.ns.num_proc

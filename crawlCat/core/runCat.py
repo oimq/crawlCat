@@ -13,7 +13,7 @@ from crawlCat import crawlCat
 from jSona import load, save
 from pyLog import Logger
 
-def run(configs, options, driver_path, name ="crawlCat") :
+def run(configs, options, driver_path, save_path, name ="crawlCat") :
     cc      = crawlCat(configs=configs, driver_path=driver_path, name=name, **options)
     log("Cat {} successfully ready for crawling".format(name))
     try :
@@ -24,7 +24,7 @@ def run(configs, options, driver_path, name ="crawlCat") :
         log(str(e))
         traceback.print_exc()
     finally :
-        cc.save("./final-[%time].json")
+        cc.save(save_path)
         cc.quit()
 
 # Multi-Processing functions
@@ -50,6 +50,7 @@ if __name__=='__main__' :
     configs = parser.get_configs()
     options = parser.get_options()
     driver_path = parser.get_driver_path()
+    save_path   = parser.get_save_path()
     
     logger  = Logger(wpath=options['write_path'], isWrite=True) if options['write_path'] else Logger()
     logger.set('name', 'runCat')
@@ -68,7 +69,7 @@ if __name__=='__main__' :
         divided_keywords = equally_divide(all_keywords, num_proc)
         divided_configs  = configs_divide(divided_keywords, num_proc, configs)
         process_list = [
-            Process(target=run, args=(divided_configs[i], options, driver_path, "cCat {}".format(i),))
+            Process(target=run, args=(divided_configs[i], options, driver_path, save_path, "cCat {}".format(i),))
             for i in range(len(divided_configs))
         ]
         log("The {} Processes are start now".format(len(process_list)))

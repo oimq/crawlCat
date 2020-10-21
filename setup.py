@@ -7,6 +7,6 @@ setup(name="crawlCat",
       author_email='taep0q@gmail.com',
       description='Crawling and scraping the web pages with selenium and chrome module',
       packages=find_packages(),
-      install_requires=['selenium', 'tqdm'],
+      install_requires=['selenium'],
       zip_safe=False
 )
