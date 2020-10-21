@@ -56,7 +56,7 @@ Before run the command, set the enviornment variables
 
 ```
 export $CRAWLCAT_HOME=your crawlCat path/crawlCat-master/crawlCat
-export CHROME_DRIVER_PATH=your Chrome driver path
+export $CHROME_DRIVER_PATH=your Chrome driver path
 ```
 
 ```
