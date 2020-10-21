@@ -1,0 +1,25 @@
+{
+    "check":{
+        "chapcha":[],
+        "error":[]
+    },
+    "delay":{
+        "first":3,
+        "total":2
+    },
+    "scroll":{
+        "count":0,
+        "delay":6,
+        "ratio":0.95
+    },
+    "filter":{
+        "empty":true,
+        "url":[],
+        "page":[
+            [
+                "//head/meta[3]/@content",
+                "shutterstock"
+            ]
+        ]
+    }
+}

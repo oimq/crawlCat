@@ -1,31 +1,27 @@
-import json
+from jSona import save, load
 import traceback
 
-class Cats :
+class Family :
     def __init__(self) :
         self.family = list()
+        self.count  = 0
     
     def __call__(self) :
         print(self.family)
 
+    def size(self) :
+        return len(self.family)
+
     def add(self, kitty) : 
-        if kitty : self.family.append(kitty())
-        return kitty
-
-    def error(self, e, msg="") :
-        print("ERROR {} : {}".format(msg, e))
-        traceback.print_exc()
-
-    def saveJson(self, cpath, table) :
-        try :
-            with open(cpath, 'w') as openfile :
-                json.dump(table, openfile)
-            print("\nSave data success. {}\n".format(cpath))
-        except Exception as e :
-            self.error(e, "SAVE JSON")
+        if kitty : 
+            self.family.append(kitty)
+            self.count += 1
+            return True
+        else :
+            return False
 
     def save(self, cpath) :
-        self.saveJson(cpath, self.family)
+        save(cpath, self.family)
 
 class Kitty :
     def __init__(self, **kwargs) :
