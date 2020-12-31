@@ -42,6 +42,8 @@ For using runCat, that need 4 configuration files : info.json, keywords.json, la
 
 We defined the configuration files in demo/templates/
 
+* options.json
+
 ```
 {
     "check": # Check whether it is chapcha or error page. 
