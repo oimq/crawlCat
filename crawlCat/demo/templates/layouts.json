@@ -1,16 +1,16 @@
 {
     "get_indices":[
-        -1, 
+        -1,
         0
     ],
     "link_xpaths":[
-        "//*[@id=\"main\"]/a/@href"
+        "//*[@id='main']/div/a/@href"
     ],
     "item_xpaths":[
         {
-            "src": "//div[2]/div/div[2]/div[2]/main/div/div[1]/div[1]/div/div[1]/div/div/img/@src",
-            "alt": "//div[2]/div/div[2]/div[2]/main/div/div[1]/div[1]/div/div[1]/div/div/img/@alt",
-            "tags": "//div[2]/div/div[2]/div[2]/main/div/div[2]/div[2]/div/div/div/div/a//text()"
+            "img" : "//*[@id='main']/div[1]/div[1]/figure/img/@src",
+            "alt": "//*[@id='main']/div[1]/div[1]/figure/img/@alt",
+            "tags": "//*[@id='main']/div/div/span/a/text()"
         }
     ]
 }

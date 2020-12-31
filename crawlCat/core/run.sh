@@ -7,4 +7,4 @@ python $CRAWLCAT_HOME/core/runCat.py \
 -e $CHROME_DRIVER_PATH/chrome_text_mode.crx \
 -w $CRAWLCAT_HOME/demo/logs/ \
 -s $CRAWLCAT_HOME/demo/outputs/final-[%time].json \
--n 4
+-n 1

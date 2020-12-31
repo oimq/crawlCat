@@ -59,7 +59,7 @@ if __name__=='__main__' :
 
     num_proc = parser.get_num_proc()
     if num_proc == 1 :
-        run(configs, options, driver_path)
+        run(configs, options, driver_path, save_path)
     elif num_proc > 1 :
         all_keywords = ["{}[%-%]{}".format(mk, sk) for mk in configs['keywords'] for sk in configs['keywords'][mk]]
         if len(all_keywords) < num_proc :

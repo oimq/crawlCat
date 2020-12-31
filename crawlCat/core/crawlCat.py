@@ -45,7 +45,7 @@ class crawlCat() :
 
     def set(self, key) :
         if key == "claw" :
-            if 'scroll' in self.configs['options'] and self.configs['options']['scroll']['count'] > 0:
+            if self.configs['options']['scroll']['count'] > 0:
                 log("Cat chooses the [thick] claw!")
                 return self.thick
             else :
@@ -63,10 +63,12 @@ class crawlCat() :
         return webdriver.Chrome(executable_path=driver_path, chrome_options=chrome_options)
 
     # load the script
-    def load(self, url) :
+    def load(self, url, delay =0) :
         try :
-            if not self.browser : raise ValueError("There is no driver here.")
+            if not self.browser  : raise ValueError("There is no driver here.")
+            if not "http" in url : url = self.configs['info']['prefix'] + url
             self.browser.get(url) 
+            self.delay(delay)
             return self.browser.page_source
         except ConnectionRefusedError as cre :
             self.error(cre, "LOAD - "+url, ex=False)
@@ -75,19 +77,23 @@ class crawlCat() :
         except Exception as e :
             self.error(e, "LOAD - "+url)
 
+    def delay(self, sec) :
+        if sec > 0 : return sleep(sec*uniform(0.8, 1.2))
+        else : return None
+
     def scroll(self, delay =0, ratio =0.95) :
         scroll_heights = [self.browser.execute_script("return document.body.scrollHeight"), 0]
         self.browser.execute_script("window.scrollTo(0, document.body.scrollHeight*{});".format(ratio)); sleep(0.02)
         scroll_heights[1] = self.browser.execute_script("return document.body.scrollHeight")
         if scroll_heights[0] != scroll_heights[1] :
-            if delay : sleep(delay*uniform(0.8, 1.2))
+            self.delay(delay)
             return scroll_heights
         else :
             return False
 
-    def thin(self, url) :
+    def thin(self, url, delay =0) :
         try :
-            page_source = self.load(url)
+            page_source = self.load(url, delay)
             log("Cat gets the {} size page from {}".format(len(page_source), url), 'd')
             return html.fromstring(page_source)
         except KeyboardInterrupt as kie :
@@ -95,9 +101,9 @@ class crawlCat() :
         except Exception as e :
             self.error(e, "READ - "+url)
 
-    def thick(self, url) :
+    def thick(self, url, delay =0) :
         try :
-            page_source = self.load(url)
+            page_source = self.load(url, delay)
             scroll_option = self.configs['options']['scroll']
             scroll_count, scroll_delay, scroll_ratio = scroll_option['count'], scroll_option['delay'], scroll_option['ratio']
 
@@ -130,12 +136,12 @@ class crawlCat() :
                             if "//" not in xpath : 
                                 item[xkey] = [xpath]
                             else :
-                                item[xkey] = [extr.replace('\t', '').strip() for extr in page_source.xpath(xpath)]
+                                item[xkey] = page_source.xpath(xpath)
                             if len(item[xkey]) > 0 : break
                     log("Success to getting the items : {}".format(str(item)), 'd')
 
                 # Get links
-                elif type(xpaths) == type("") or type(xpaths) == type("[]") :
+                elif type(xpaths) == type("") or type(xpaths) == type([]) :
                     item = list()
                     if type(xpaths) == type("") : xpaths = [xpaths]
                     for xpath in xpaths :
@@ -174,16 +180,14 @@ class crawlCat() :
         ]
 
     def run(self) :
-        if self.configs['options']['delay']['first'] > 0:
-            log("Cat waits {} seconds before crawling".format(self.configs['options']['delay']['first']), 'd')
-            sleep(self.configs['options']['delay']['first'])
         urls = self.create_urls()
         log("Cat start to crawling {} number of urls".format(len(urls)), 'd')
         for url in urls : self.crawl(url, 0)
 
     def isPass(self, url, page_sources) :
-        if self.configs['options']['filter']['url'] and url in self.configs['options']['filter']['url'] :
-            return True
+        if self.configs['options']['filter']['url'] :
+            for furl in self.configs['options']['filter']['url'] :
+                if url in furl or furl in url : return True
         if self.configs['options']['filter']['page'] :
             for xp, kw in self.configs['options']['filter']['page'] :
                 for cw in page_sources[0].xpath(xp) :
@@ -205,8 +209,11 @@ class crawlCat() :
     def crawl(self, url, loc) :
         try :          
             log("Cat crawl the url : {}, Current location : {}".format(url, loc), 'd')
-            page_sources = [self.claw(url)]
+            page_sources = [self.claw(url, self.configs['options']['delay']['total']+self.configs['options']['delay']['first'])] \
+                if loc == 0 and self.configs['options']['delay']['first'] > 0 else \
+                [self.claw(url, self.configs['options']['delay']['total'])]
 
+            # Pass or Stop page
             isPass, isStop = self.isPass(url, page_sources), self.isStop(page_sources)
             if isPass : 
                 return
@@ -217,18 +224,18 @@ class crawlCat() :
 
             # Get the items
             ginx, items = self.configs['layouts']['get_indices'][loc], None
-            if ginx != -1 and ginx < len(self.configs['layouts']["item_xpaths"]):
+            if ginx > -1 and ginx < len(self.configs['layouts']["item_xpaths"]):
                 log('Get the items, get_indices {} at loc {}'.format(self.configs['layouts']['get_indices'][loc], loc), 'd')
                 items = self.form(
                     page_sources,
                     self.configs['layouts']["item_xpaths"][ginx]
                 )
                 if self.configs['options']['filter']['empty'] and self.isEmpty(items) : 
-                    return log('Empty item occurs : {}'.format(items), 'd')
-
-                # Store the Items
-                self.family.add(items)
-                log('Success to store items to family : {}'.format(items), 'd')
+                    log('Empty item occurs : {}'.format(items), 'd')
+                else :
+                    # Store the Items
+                    self.family.add(items)
+                    log('Success to store items to family : {}'.format(items), 'd')
 
             # Get the links
             if self.depth > loc :
@@ -236,7 +243,6 @@ class crawlCat() :
                 links = self.form(page_sources, self.configs['layouts']["link_xpaths"][loc])
                 del page_sources, items, url, ginx
                 for link in links :
-                    if self.configs['options']['delay']['total'] > 0 : sleep(self.configs['options']['delay']['total'])
                     if self.isVaild(link) : self.crawl(link, loc+1)
             
         except KeyboardInterrupt as ki :
