@@ -1,5 +1,5 @@
 import json
-from lxml import html
+from lxml import html, etree
 import traceback
 from selenium import webdriver
 
@@ -137,7 +137,12 @@ class crawlCat() :
                                 item[xkey] = [xpath]
                             else :
                                 item[xkey] = page_source.xpath(xpath)
-                            if len(item[xkey]) > 0 : break
+                            if len(item[xkey]) > 0 : 
+                                if item[xkey] and ("<Element" in str(item[xkey][0])) :
+                                    print("->")
+                                    item[xkey] = page_source.xpath(xpath+"/descendant::*/text()")
+                                    print(item[xkey])
+                                break
                     log("Success to getting the items : {}".format(str(item)), 'd')
 
                 # Get links
