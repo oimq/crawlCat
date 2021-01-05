@@ -111,7 +111,7 @@ class crawlCat() :
                 scroll_heights = self.scroll(scroll_delay, scroll_ratio)
                 if scroll_heights :
                     log("Cat scrolls the page, Bar heights : {} -> {}".format(*scroll_heights), 'd')
-                    page_source += "\n"+self.load(url)
+                    page_source += "\n"+self.browser.page_source
                     scroll_count -= 1
                 else :
                     break
@@ -220,7 +220,7 @@ class crawlCat() :
             elif isStop :
                 while True :
                     if input("{} occur, Type 'g' or 'go' for retry.".format(isStop)) in ['g', 'go'] : break
-                return self.craw(url, loc)
+                return self.crawl(url, loc)
 
             # Get the items
             ginx, items = self.configs['layouts']['get_indices'][loc], None
